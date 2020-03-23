@@ -94,7 +94,7 @@ class GoogleScholarPlugin extends GenericPlugin {
 
 		// Submission title
 		$templateMgr->addHeader('googleScholarTitle', '<meta name="citation_title" content="' . htmlspecialchars($submission->getFullTitle($submission->getLocale())) . '"/>');
-		if ($language = $submission->getLanguage()) $templateMgr->addHeader('googleScholarLanguage', '<meta name="citation_language" content="' . htmlspecialchars($language) . '"/>');
+		if ($locale = $submission->getLocale()) $templateMgr->addHeader('googleScholarLanguage', '<meta name="citation_language" content="' . htmlspecialchars(substr($locale, 0, 2)) . '"/>');
 
 		// Submission publish date and issue information
 		if ($applicationName == "ojs2"){
