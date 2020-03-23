@@ -46,13 +46,20 @@ class GoogleScholarPlugin extends GenericPlugin {
 	 * @return boolean
 	 */
 	function submissionView($hookName, $args) {
-		$request = $args[0];
-		$issue = $args[1];
-		$submission = $args[2];
-		$requestArgs = $request->getRequestedArgs();
-		$context = $request->getContext();
 		$application = Application::get();
 		$applicationName = $application->getName();
+		$request = $args[0];
+		if ($applicationName == "ojs2"){
+			$issue = $args[1];
+			$submission = $args[2];
+			$submissionPath = 'article';
+		}
+		if ($applicationName == "ops"){
+			$submission = $args[1];
+			$submissionPath = 'preprint';
+		}		
+		$requestArgs = $request->getRequestedArgs();
+		$context = $request->getContext();
 
 		// Only add Google Scholar metadata tags to the canonical URL for the latest version
 		// See discussion: https://github.com/pkp/pkp-lib/issues/4870
@@ -85,35 +92,41 @@ class GoogleScholarPlugin extends GenericPlugin {
 			}
 		}
 
-		// Submission details
+		// Submission title
 		$templateMgr->addHeader('googleScholarTitle', '<meta name="citation_title" content="' . htmlspecialchars($submission->getFullTitle($submission->getLocale())) . '"/>');
 		if ($language = $submission->getLanguage()) $templateMgr->addHeader('googleScholarLanguage', '<meta name="citation_language" content="' . htmlspecialchars($language) . '"/>');
 
-		if (is_a($submission, 'Submission') && ($datePublished = $submission->getDatePublished()) && (!$issue->getYear() || $issue->getYear() == strftime('%Y', strtotime($datePublished)))) {
-			$templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . strftime('%Y/%m/%d', strtotime($datePublished)) . '"/>');
-		} elseif ($issue && $issue->getYear()) {
-			$templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . htmlspecialchars($issue->getYear()) . '"/>');
-		} elseif ($issue && ($datePublished = $issue->getDatePublished())) {
-			$templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . strftime('%Y/%m/%d', strtotime($datePublished)) . '"/>');
+		// Submission publish date and issue information
+		if ($applicationName == "ojs2"){
+			if (is_a($submission, 'Submission') && ($datePublished = $submission->getDatePublished()) && (!$issue->getYear() || $issue->getYear() == strftime('%Y', strtotime($datePublished)))) {
+				$templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . strftime('%Y/%m/%d', strtotime($datePublished)) . '"/>');
+			} elseif ($issue && $issue->getYear()) {
+				$templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . htmlspecialchars($issue->getYear()) . '"/>');
+			} elseif ($issue && ($datePublished = $issue->getDatePublished())) {
+				$templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . strftime('%Y/%m/%d', strtotime($datePublished)) . '"/>');
+			}
+			if ($issue) {
+				if ($issue->getShowVolume()) $templateMgr->addHeader('googleScholarVolume', '<meta name="citation_volume" content="' . htmlspecialchars($issue->getVolume()) . '"/>');
+				if ($issue->getShowNumber()) $templateMgr->addHeader('googleScholarNumber', '<meta name="citation_issue" content="' . htmlspecialchars($issue->getNumber()) . '"/>');
+			}
+			if ($submission->getPages()) {
+				if ($startPage = $submission->getStartingPage()) $templateMgr->addHeader('googleScholarStartPage', '<meta name="citation_firstpage" content="' . htmlspecialchars($startPage) . '"/>');
+				if ($endPage = $submission->getEndingPage()) $templateMgr->addHeader('googleScholarEndPage', '<meta name="citation_lastpage" content="' . htmlspecialchars($endPage) . '"/>');
+			}
+		}
+		if ($applicationName == "ops"){
+			$templateMgr->addHeader('googleScholarDate', '<meta name="citation_online_date" content="' . strftime('%Y/%m/%d', strtotime($submission->getDatePublished())) . '"/>');
 		}
 
-		if ($issue) {
-			if ($issue->getShowVolume()) $templateMgr->addHeader('googleScholarVolume', '<meta name="citation_volume" content="' . htmlspecialchars($issue->getVolume()) . '"/>');
-			if ($issue->getShowNumber()) $templateMgr->addHeader('googleScholarNumber', '<meta name="citation_issue" content="' . htmlspecialchars($issue->getNumber()) . '"/>');
-		}
-
-		if ($submission->getPages()) {
-			if ($startPage = $submission->getStartingPage()) $templateMgr->addHeader('googleScholarStartPage', '<meta name="citation_firstpage" content="' . htmlspecialchars($startPage) . '"/>');
-			if ($endPage = $submission->getEndingPage()) $templateMgr->addHeader('googleScholarEndPage', '<meta name="citation_lastpage" content="' . htmlspecialchars($endPage) . '"/>');
-		}
-
+		// Identifiers: DOI, URN
 		foreach((array) $templateMgr->getTemplateVars('pubIdPlugins') as $pubIdPlugin) {
 			if ($pubId = $submission->getStoredPubId($pubIdPlugin->getPubIdType())) {
 				$templateMgr->addHeader('googleScholarPubId' . $pubIdPlugin->getPubIdDisplayType(), '<meta name="citation_' . htmlspecialchars(strtolower($pubIdPlugin->getPubIdDisplayType())) . '" content="' . htmlspecialchars($pubId) . '"/>');
 			}
 		}
 
-		$templateMgr->addHeader('googleScholarHtmlUrl', '<meta name="citation_abstract_html_url" content="' . $request->url(null, 'article', 'view', array($submission->getBestId())) . '"/>');
+		// Abstract url and keywords
+		$templateMgr->addHeader('googleScholarHtmlUrl', '<meta name="citation_abstract_html_url" content="' . $request->url(null, $submissionPath, 'view', array($submission->getBestId())) . '"/>');
 
 		$i=0;
 		$dao = DAORegistry::getDAO('SubmissionKeywordDAO');
@@ -124,17 +137,18 @@ class GoogleScholarPlugin extends GenericPlugin {
 			}
 		}
 
+		// Galley links
 		$i=$j=0;
 		if (is_a($submission, 'Submission')) foreach ($submission->getGalleys() as $galley) {
 			if (is_a($galley->getFile(), 'SupplementaryFile')) continue;
 			if ($galley->getFileType()=='application/pdf') {
-				$templateMgr->addHeader('googleScholarPdfUrl' . $i++, '<meta name="citation_pdf_url" content="' . $request->url(null, 'article', 'download', array($submission->getBestId(), $galley->getBestGalleyId())) . '"/>');
+				$templateMgr->addHeader('googleScholarPdfUrl' . $i++, '<meta name="citation_pdf_url" content="' . $request->url(null, $submissionPath, 'download', array($submission->getBestId(), $galley->getBestGalleyId())) . '"/>');
 			} elseif ($galley->getFileType()=='text/html') {
-				$templateMgr->addHeader('googleScholarHtmlUrl' . $i++, '<meta name="citation_fulltext_html_url" content="' . $request->url(null, 'article', 'view', array($submission->getBestId(), $galley->getBestGalleyId())) . '"/>');
+				$templateMgr->addHeader('googleScholarHtmlUrl' . $i++, '<meta name="citation_fulltext_html_url" content="' . $request->url(null, $submissionPath, 'view', array($submission->getBestId(), $galley->getBestGalleyId())) . '"/>');
 			}
 		}
 
-		// citation_refence
+		// citations
 		$outputReferences = array();
 		$citationDao = DAORegistry::getDAO('CitationDAO'); /* @var $citationDao CitationDAO */
 		$parsedCitations = $citationDao->getByPublicationId($submission->getCurrentPublication()->getId());
