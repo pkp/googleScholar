@@ -22,8 +22,8 @@ class GoogleScholarPlugin extends GenericPlugin {
 	function register($category, $path, $mainContextId = null) {
 		if (parent::register($category, $path, $mainContextId)) {
 			if ($this->getEnabled($mainContextId)) {
-				HookRegistry::register('ArticleHandler::view',array(&$this, 'submissionView'));
-				HookRegistry::register('PreprintHandler::view',array(&$this, 'submissionView'));
+				HookRegistry::register('ArticleHandler::view', array(&$this, 'submissionView'));
+				HookRegistry::register('PreprintHandler::view', array(&$this, 'submissionView'));
 			}
 			return true;
 		}
@@ -149,7 +149,7 @@ class GoogleScholarPlugin extends GenericPlugin {
 			}
 		}
 
-		// citations
+		// Citations
 		$outputReferences = array();
 		$citationDao = DAORegistry::getDAO('CitationDAO'); /* @var $citationDao CitationDAO */
 		$parsedCitations = $citationDao->getByPublicationId($submission->getCurrentPublication()->getId());
