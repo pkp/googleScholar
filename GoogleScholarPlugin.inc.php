@@ -150,13 +150,11 @@ class GoogleScholarPlugin extends GenericPlugin {
 		}
 
 		// Citations
-		$outputReferences = array();
+		$outputReferences = [];
 		$citationDao = DAORegistry::getDAO('CitationDAO'); /* @var $citationDao CitationDAO */
 		$parsedCitations = $citationDao->getByPublicationId($submission->getCurrentPublication()->getId());
-		if ($parsedCitations->getCount()){
-			while ($citation = $parsedCitations->next()) {
-				$outputReferences[] = $citation->getRawCitation();
-			}
+		while ($citation = $parsedCitations->next()) {
+			$outputReferences[] = $citation->getRawCitation();
 		}
 		HookRegistry::call('GoogleScholarPlugin::references', array(&$outputReferences, $submission->getId()));
 
