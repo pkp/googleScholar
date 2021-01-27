@@ -57,7 +57,7 @@ class GoogleScholarPlugin extends GenericPlugin {
 		if ($applicationName == "ops"){
 			$submission = $args[1];
 			$submissionPath = 'preprint';
-		}		
+		}
 		$requestArgs = $request->getRequestedArgs();
 		$context = $request->getContext();
 
@@ -99,7 +99,7 @@ class GoogleScholarPlugin extends GenericPlugin {
 
 		// Submission publish date and issue information
 		if ($applicationName == "ojs2"){
-			if (is_a($submission, 'Submission') && ($datePublished = $submission->getDatePublished()) && (!$issue->getYear() || $issue->getYear() == strftime('%Y', strtotime($datePublished)))) {
+			if (is_a($submission, 'Submission') && ($datePublished = $submission->getDatePublished()) && (!$issue || !$issue->getYear() || $issue->getYear() == strftime('%Y', strtotime($datePublished)))) {
 				$templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . strftime('%Y/%m/%d', strtotime($datePublished)) . '"/>');
 			} elseif ($issue && $issue->getYear()) {
 				$templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . htmlspecialchars($issue->getYear()) . '"/>');
