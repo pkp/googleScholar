@@ -100,7 +100,7 @@ class GoogleScholarPlugin extends GenericPlugin
         // Contributors
         foreach ($submission->getCurrentPublication()->getData('authors') as $i => $author) {
             $templateMgr->addHeader('googleScholarAuthor' . $i, '<meta name="citation_author" content="' . htmlspecialchars($author->getFullName(false)) . '"/>');
-            if ($affiliation = htmlspecialchars($author->getAffiliation($submission->getLocale()))) {
+            if ($affiliation = htmlspecialchars($author->getLocalizedAffiliation())) {
                 $templateMgr->addHeader('googleScholarAuthor' . $i . 'Affiliation', '<meta name="citation_author_institution" content="' . $affiliation . '"/>');
             }
         }
