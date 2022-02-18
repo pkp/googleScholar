@@ -13,10 +13,14 @@
  * @brief Inject Google Scholar meta tags into submission views to facilitate indexing.
  */
 
+use APP\core\Application;
+use APP\submission\Submission;
+use APP\template\TemplateManager;
+use PKP\db\DAORegistry;
+
+use PKP\facades\Locale;
 use PKP\plugins\GenericPlugin;
 use PKP\plugins\HookRegistry;
-
-use APP\submission\Submission;
 
 class GoogleScholarPlugin extends GenericPlugin
 {
@@ -51,8 +55,8 @@ class GoogleScholarPlugin extends GenericPlugin
     /**
      * Inject Google Scholar metadata into submission landing page view
      *
-     * @param $hookName string
-     * @param $args array
+     * @param string $hookName
+     * @param array $args
      *
      * @return boolean
      */
@@ -152,8 +156,9 @@ class GoogleScholarPlugin extends GenericPlugin
         $templateMgr->addHeader('googleScholarHtmlUrl', '<meta name="citation_abstract_html_url" content="' . $request->url(null, $submissionPath, 'view', [$submission->getBestId()]) . '"/>');
 
         $i = 0;
+        /** @var SubmissionKeywordDAO */
         $dao = DAORegistry::getDAO('SubmissionKeywordDAO');
-        $keywords = $dao->getKeywords($submission->getCurrentPublication()->getId(), [AppLocale::getLocale()]);
+        $keywords = $dao->getKeywords($submission->getCurrentPublication()->getId(), [Locale::getLocale()]);
         foreach ($keywords as $locale => $localeKeywords) {
             foreach ($localeKeywords as $keyword) {
                 $templateMgr->addHeader('googleScholarKeyword' . $i++, '<meta name="citation_keywords" xml:lang="' . htmlspecialchars(substr($locale, 0, 2)) . '" content="' . htmlspecialchars($keyword) . '"/>');
