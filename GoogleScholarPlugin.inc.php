@@ -117,12 +117,12 @@ class GoogleScholarPlugin extends GenericPlugin
 
         // Submission publish date and issue information
         if ($applicationName == 'ojs2') {
-            if ($submission instanceof Submission && ($datePublished = $submission->getDatePublished()) && (!$issue || !$issue->getYear() || $issue->getYear() == strftime('%Y', strtotime($datePublished)))) {
-                $templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . strftime('%Y/%m/%d', strtotime($datePublished)) . '"/>');
+            if ($submission instanceof Submission && ($datePublished = $submission->getDatePublished()) && (!$issue || !$issue->getYear() || $issue->getYear() == date('Y', strtotime($datePublished)))) {
+                $templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . date('Y/m/d', strtotime($datePublished)) . '"/>');
             } elseif ($issue && $issue->getYear()) {
                 $templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . htmlspecialchars($issue->getYear()) . '"/>');
             } elseif ($issue && ($datePublished = $issue->getDatePublished())) {
-                $templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . strftime('%Y/%m/%d', strtotime($datePublished)) . '"/>');
+                $templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . date('Y/m/d', strtotime($datePublished)) . '"/>');
             }
             if ($issue) {
                 if ($issue->getShowVolume()) {
@@ -142,7 +142,7 @@ class GoogleScholarPlugin extends GenericPlugin
             }
         }
         if ($applicationName == 'ops') {
-            $templateMgr->addHeader('googleScholarDate', '<meta name="citation_online_date" content="' . strftime('%Y/%m/%d', strtotime($submission->getDatePublished())) . '"/>');
+            $templateMgr->addHeader('googleScholarDate', '<meta name="citation_online_date" content="' . date('Y/m/d', strtotime($submission->getDatePublished())) . '"/>');
         }
 
         // Identifiers: DOI, URN
