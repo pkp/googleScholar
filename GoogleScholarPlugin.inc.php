@@ -169,9 +169,6 @@ class GoogleScholarPlugin extends GenericPlugin
         $i = $j = 0;
         if ($submission instanceof Submission) {
             foreach ($submission->getGalleys() as $galley) {
-                if (is_a($galley->getFile(), 'SupplementaryFile')) {
-                    continue;
-                }
                 if ($galley->getFileType() == 'application/pdf') {
                     $templateMgr->addHeader('googleScholarPdfUrl' . $i++, '<meta name="citation_pdf_url" content="' . $request->url(null, $submissionPath, 'download', [$submission->getBestId(), $galley->getBestGalleyId()]) . '"/>');
                 } elseif ($galley->getFileType() == 'text/html') {
