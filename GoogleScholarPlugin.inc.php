@@ -13,6 +13,8 @@
  * @brief Inject Google Scholar meta tags into submission views to facilitate indexing.
  */
 
+use function PHP81_BC\strftime;
+
 import('lib.pkp.classes.plugins.GenericPlugin');
 
 class GoogleScholarPlugin extends GenericPlugin {
