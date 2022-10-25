@@ -13,6 +13,8 @@
  * @brief Inject Google Scholar meta tags into submission views to facilitate indexing.
  */
 
+use function PHP81_BC\strftime;
+
 import('lib.pkp.classes.plugins.GenericPlugin');
 
 class GoogleScholarPlugin extends GenericPlugin {
@@ -88,7 +90,7 @@ class GoogleScholarPlugin extends GenericPlugin {
 		foreach ($submission->getAuthors() as $i => $author) {
 			$templateMgr->addHeader('googleScholarAuthor' . $i, '<meta name="citation_author" content="' . htmlspecialchars($author->getFullName(false)) .'"/>');
 
-			if ($affiliation = htmlspecialchars($author->getLocalizedAffiliation())) {
+			if ($affiliation = htmlspecialchars($author->getLocalizedAffiliation() ?? '')) {
 				$templateMgr->addHeader('googleScholarAuthor' . $i . 'Affiliation', '<meta name="citation_author_institution" content="' . $affiliation . '"/>');
 			}
 		}
