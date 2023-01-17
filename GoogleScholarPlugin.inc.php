@@ -14,13 +14,12 @@
  */
 
 use APP\core\Application;
+use APP\facades\Repo;
 use APP\submission\Submission;
 use APP\template\TemplateManager;
 use PKP\db\DAORegistry;
-
-use PKP\facades\Locale;
 use PKP\plugins\GenericPlugin;
-use PKP\plugins\HookRegistry;
+use PKP\plugins\Hook;
 
 class GoogleScholarPlugin extends GenericPlugin
 {
@@ -33,8 +32,8 @@ class GoogleScholarPlugin extends GenericPlugin
     {
         if (parent::register($category, $path, $mainContextId)) {
             if ($this->getEnabled($mainContextId)) {
-                HookRegistry::register('ArticleHandler::view', [&$this, 'submissionView']);
-                HookRegistry::register('PreprintHandler::view', [&$this, 'submissionView']);
+                Hook::add('ArticleHandler::view', [&$this, 'submissionView']);
+                Hook::add('PreprintHandler::view', [&$this, 'submissionView']);
             }
             return true;
         }
@@ -101,23 +100,25 @@ class GoogleScholarPlugin extends GenericPlugin
         }
 
 
+        $publication = $submission->getCurrentPublication();
+        $publicationLocale = $publication->getData('locale');
+        $submissionBestId = $publication->getData('urlPath') ?? $submission->getId();
+
         // Contributors
-        foreach ($submission->getCurrentPublication()->getData('authors') as $i => $author) {
+        foreach ($publication->getData('authors') as $i => $author) {
             $templateMgr->addHeader('googleScholarAuthor' . $i, '<meta name="citation_author" content="' . htmlspecialchars($author->getFullName(false)) . '"/>');
-            if ($affiliation = htmlspecialchars($author->getLocalizedAffiliation())) {
+            if ($affiliation = htmlspecialchars($author->getLocalizedData('affiliation', $publicationLocale))) {
                 $templateMgr->addHeader('googleScholarAuthor' . $i . 'Affiliation', '<meta name="citation_author_institution" content="' . $affiliation . '"/>');
             }
         }
 
         // Submission title
-        $templateMgr->addHeader('googleScholarTitle', '<meta name="citation_title" content="' . htmlspecialchars($submission->getFullTitle($submission->getLocale())) . '"/>');
-        if ($locale = $submission->getLocale()) {
-            $templateMgr->addHeader('googleScholarLanguage', '<meta name="citation_language" content="' . htmlspecialchars(substr($locale, 0, 2)) . '"/>');
-        }
+        $templateMgr->addHeader('googleScholarTitle', '<meta name="citation_title" content="' . htmlspecialchars($publication->getLocalizedFullTitle($publicationLocale)) . '"/>');
+        $templateMgr->addHeader('googleScholarLanguage', '<meta name="citation_language" content="' . htmlspecialchars(substr($publicationLocale, 0, 2)) . '"/>');
 
         // Submission publish date and issue information
         if ($applicationName == 'ojs2') {
-            if ($submission instanceof Submission && ($datePublished = $submission->getDatePublished()) && (!$issue || !$issue->getYear() || $issue->getYear() == date('Y', strtotime($datePublished)))) {
+            if ($submission instanceof Submission && ($datePublished = $publication->getData('datePublished')) && (!$issue || !$issue->getYear() || $issue->getYear() == date('Y', strtotime($datePublished)))) {
                 $templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . date('Y/m/d', strtotime($datePublished)) . '"/>');
             } elseif ($issue && $issue->getYear()) {
                 $templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . htmlspecialchars($issue->getYear()) . '"/>');
@@ -132,47 +133,71 @@ class GoogleScholarPlugin extends GenericPlugin
                     $templateMgr->addHeader('googleScholarNumber', '<meta name="citation_issue" content="' . htmlspecialchars($issue->getNumber()) . '"/>');
                 }
             }
-            if ($submission->getPages()) {
-                if ($startPage = $submission->getStartingPage()) {
+            if ($publication->getData('pages')) {
+                if ($startPage = $publication->getStartingPage()) {
                     $templateMgr->addHeader('googleScholarStartPage', '<meta name="citation_firstpage" content="' . htmlspecialchars($startPage) . '"/>');
                 }
-                if ($endPage = $submission->getEndingPage()) {
+                if ($endPage = $publication->getEndingPage()) {
                     $templateMgr->addHeader('googleScholarEndPage', '<meta name="citation_lastpage" content="' . htmlspecialchars($endPage) . '"/>');
                 }
             }
         }
         if ($applicationName == 'ops') {
-            $templateMgr->addHeader('googleScholarDate', '<meta name="citation_online_date" content="' . date('Y/m/d', strtotime($submission->getDatePublished())) . '"/>');
+            $templateMgr->addHeader('googleScholarDate', '<meta name="citation_online_date" content="' . date('Y/m/d', strtotime($publication->getData('datePublished'))) . '"/>');
         }
 
-        // Identifiers: DOI, URN
+        // DOI
+        if ($doi = $publication->getDoi()) {
+            $templateMgr->addHeader('googleScholarPublicationDOI', '<meta name="citation_doi" content="' . htmlspecialchars($doi) . '"/>');
+        }
+        // URN
         foreach ((array) $templateMgr->getTemplateVars('pubIdPlugins') as $pubIdPlugin) {
-            if ($pubId = $submission->getStoredPubId($pubIdPlugin->getPubIdType())) {
+            if ($pubId = $publication->getStoredPubId($pubIdPlugin->getPubIdType())) {
                 $templateMgr->addHeader('googleScholarPubId' . $pubIdPlugin->getPubIdDisplayType(), '<meta name="citation_' . htmlspecialchars(strtolower($pubIdPlugin->getPubIdDisplayType())) . '" content="' . htmlspecialchars($pubId) . '"/>');
             }
         }
 
-        // Abstract url and keywords
-        $templateMgr->addHeader('googleScholarHtmlUrl', '<meta name="citation_abstract_html_url" content="' . $request->url(null, $submissionPath, 'view', [$submission->getBestId()]) . '"/>');
+        // Abstract URL
+        $templateMgr->addHeader('googleScholarHtmlUrl', '<meta name="citation_abstract_html_url" content="' . $request->url(null, $submissionPath, 'view', [$submissionBestId]) . '"/>');
 
+        // Abstract
+        if ($abstract = $publication->getLocalizedData('abstract', $publicationLocale)) {
+            $templateMgr->addHeader('googleScholarAbstract', '<meta name="citation_abstract" xml:lang="' . htmlspecialchars(substr($publicationLocale, 0, 2)) . '" content="' . htmlspecialchars(strip_tags($abstract)) . '"/>');
+        }
+
+        // Subjects
         $i = 0;
-        /** @var SubmissionKeywordDAO */
-        $dao = DAORegistry::getDAO('SubmissionKeywordDAO');
-        $keywords = $dao->getKeywords($submission->getCurrentPublication()->getId(), [Locale::getLocale()]);
-        foreach ($keywords as $locale => $localeKeywords) {
-            foreach ($localeKeywords as $keyword) {
-                $templateMgr->addHeader('googleScholarKeyword' . $i++, '<meta name="citation_keywords" xml:lang="' . htmlspecialchars(substr($locale, 0, 2)) . '" content="' . htmlspecialchars($keyword) . '"/>');
+        $submissionSubjectDao = DAORegistry::getDAO('SubmissionSubjectDAO');
+        /** @var SubmissionSubjectDAO $submissionSubjectDao */
+        if ($subjects = $submissionSubjectDao->getSubjects($publication->getId(), [$publicationLocale])) {
+            foreach ($subjects as $locale => $subjectLocale) {
+                foreach ($subjectLocale as $gsKeyword) {
+                    $templateMgr->addHeader('googleScholarSubject' . $i++, '<meta name="citation_keywords" xml:lang="' . htmlspecialchars(substr($locale, 0, 2)) . '" content="' . htmlspecialchars($gsKeyword) . '"/>');
+                }
+            }
+        }
+
+        // Keywords
+        $i = 0;
+        $submissionKeywordDao = DAORegistry::getDAO('SubmissionKeywordDAO');
+        /** @var SubmissionKeywordDAO $submissionKeywordDao */
+        if ($keywords = $submissionKeywordDao->getKeywords($publication->getId(), [$publicationLocale])) {
+            foreach ($keywords as $locale => $keywordLocale) {
+                foreach ($keywordLocale as $gsKeyword) {
+                    $templateMgr->addHeader('googleScholarKeyword' . $i++, '<meta name="citation_keywords" xml:lang="' . htmlspecialchars(substr($locale, 0, 2)) . '" content="' . htmlspecialchars($gsKeyword) . '"/>');
+                }
             }
         }
 
         // Galley links
-        $i = $j = 0;
+        $i = 0;
         if ($submission instanceof Submission) {
-            foreach ($submission->getGalleys() as $galley) {
-                if ($galley->getFileType() == 'application/pdf') {
-                    $templateMgr->addHeader('googleScholarPdfUrl' . $i++, '<meta name="citation_pdf_url" content="' . $request->url(null, $submissionPath, 'download', [$submission->getBestId(), $galley->getBestGalleyId()]) . '"/>');
-                } elseif ($galley->getFileType() == 'text/html') {
-                    $templateMgr->addHeader('googleScholarHtmlUrl' . $i++, '<meta name="citation_fulltext_html_url" content="' . $request->url(null, $submissionPath, 'view', [$submission->getBestId(), $galley->getBestGalleyId()]) . '"/>');
+            foreach ($publication->getData('galleys') as $galley) {
+                $submissionFile = Repo::submissionFile()->get($galley->getData('submissionFileId'));
+                if ($submissionFile->getData('mimetype') == 'application/pdf') {
+                    $templateMgr->addHeader('googleScholarPdfUrl' . $i++, '<meta name="citation_pdf_url" content="' . $request->url(null, $submissionPath, 'download', [$submissionBestId, $galley->getBestGalleyId()]) . '"/>');
+                } elseif ($submissionFile->getData('mimetype') == 'text/html') {
+                    $templateMgr->addHeader('googleScholarHtmlUrl' . $i++, '<meta name="citation_fulltext_html_url" content="' . $request->url(null, $submissionPath, 'view', [$submissionBestId, $galley->getBestGalleyId()]) . '"/>');
                 }
             }
         }
@@ -180,11 +205,11 @@ class GoogleScholarPlugin extends GenericPlugin
         // Citations
         $outputReferences = [];
         $citationDao = DAORegistry::getDAO('CitationDAO'); /** @var CitationDAO $citationDao */
-        $parsedCitations = $citationDao->getByPublicationId($submission->getCurrentPublication()->getId());
+        $parsedCitations = $citationDao->getByPublicationId($publication->getId());
         while ($citation = $parsedCitations->next()) {
             $outputReferences[] = $citation->getRawCitation();
         }
-        HookRegistry::call('GoogleScholarPlugin::references', [&$outputReferences, $submission->getId()]);
+        Hook::call('GoogleScholarPlugin::references', [&$outputReferences, $submission->getId()]);
 
         if (!empty($outputReferences)) {
             $i = 0;
