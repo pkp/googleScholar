@@ -113,7 +113,7 @@ class GoogleScholarPlugin extends GenericPlugin
         }
 
         // Submission title
-        $templateMgr->addHeader('googleScholarTitle', '<meta name="citation_title" content="' . htmlspecialchars(strip_tags($publication->getLocalizedFullTitle($publicationLocale))) . '"/>');
+        $templateMgr->addHeader('googleScholarTitle', '<meta name="citation_title" content="' . htmlspecialchars($publication->getLocalizedFullTitle($publicationLocale)) . '"/>');
         $templateMgr->addHeader('googleScholarLanguage', '<meta name="citation_language" content="' . htmlspecialchars(substr($publicationLocale, 0, 2)) . '"/>');
 
         // Submission publish date and issue information
