@@ -15,7 +15,6 @@
 
 use APP\core\Application;
 use APP\facades\Repo;
-use APP\submission\Submission;
 use APP\template\TemplateManager;
 use PKP\db\DAORegistry;
 use PKP\plugins\GenericPlugin;
@@ -105,12 +104,11 @@ class GoogleScholarPlugin extends GenericPlugin
         $submissionBestId = $publication->getData('urlPath') ?? $submission->getId();
 
         // Contributors
-        if ($authors = $publication->getData('authors')) {
-            foreach ($authors as $i => $author) {
-                $templateMgr->addHeader('googleScholarAuthor' . $i, '<meta name="citation_author" content="' . htmlspecialchars($author->getFullName(false)) . '"/>');
-                if ($affiliation = htmlspecialchars($author->getLocalizedData('affiliation', $publicationLocale))) {
-                    $templateMgr->addHeader('googleScholarAuthor' . $i . 'Affiliation', '<meta name="citation_author_institution" content="' . $affiliation . '"/>');
-                }
+        $authors = $publication->getData('authors');
+        foreach ($authors as $i => $author) {
+            $templateMgr->addHeader('googleScholarAuthor' . $i, '<meta name="citation_author" content="' . htmlspecialchars($author->getFullName(false)) . '"/>');
+            if ($affiliation = htmlspecialchars($author->getLocalizedData('affiliation', $publicationLocale))) {
+                $templateMgr->addHeader('googleScholarAuthor' . $i . 'Affiliation', '<meta name="citation_author_institution" content="' . $affiliation . '"/>');
             }
         }
 
@@ -121,7 +119,6 @@ class GoogleScholarPlugin extends GenericPlugin
 
         // Submission publish date and issue information
         if ($applicationName == 'ojs2') {
-            //$datePublished = $publication->getData('datePublished');
             if (($datePublished = $publication->getData('datePublished')) && (!$issue || !$issue->getYear() || $issue->getYear() == date('Y', strtotime($datePublished)))) {
                 $templateMgr->addHeader('googleScholarDate', '<meta name="citation_date" content="' . date('Y/m/d', strtotime($datePublished)) . '"/>');
             } elseif ($issue && $issue->getYear()) {
@@ -190,14 +187,14 @@ class GoogleScholarPlugin extends GenericPlugin
         }
 
         // Galley links
-        if ($galleys = $publication->getData('galleys')) {
-            foreach ($galleys as $i => $galley) {
-                if ($submissionFile = Repo::submissionFile()->get($galley->getData('submissionFileId'))) {
-                    if ($submissionFile->getData('mimetype') == 'application/pdf') {
-                        $templateMgr->addHeader('googleScholarPdfUrl' . $i++, '<meta name="citation_pdf_url" content="' . $request->url(null, $submissionPath, 'download', [$submissionBestId, $galley->getBestGalleyId()]) . '"/>');
-                    } elseif ($submissionFile->getData('mimetype') == 'text/html') {
-                        $templateMgr->addHeader('googleScholarHtmlUrl' . $i++, '<meta name="citation_fulltext_html_url" content="' . $request->url(null, $submissionPath, 'view', [$submissionBestId, $galley->getBestGalleyId()]) . '"/>');
-                    }
+        $galleys = $publication->getData('galleys');
+        foreach ($galleys as $i => $galley) {
+            $submissionFileId = $galley->getData('submissionFileId');
+            if ($submissionFileId && $submissionFile = Repo::submissionFile()->get($submissionFileId)) {
+                if ($submissionFile->getData('mimetype') == 'application/pdf') {
+                    $templateMgr->addHeader('googleScholarPdfUrl' . $i++, '<meta name="citation_pdf_url" content="' . $request->url(null, $submissionPath, 'download', [$submissionBestId, $galley->getBestGalleyId()]) . '"/>');
+                } elseif ($submissionFile->getData('mimetype') == 'text/html') {
+                    $templateMgr->addHeader('googleScholarHtmlUrl' . $i++, '<meta name="citation_fulltext_html_url" content="' . $request->url(null, $submissionPath, 'view', [$submissionBestId, $galley->getBestGalleyId()]) . '"/>');
                 }
             }
         }
@@ -211,10 +208,8 @@ class GoogleScholarPlugin extends GenericPlugin
         }
         Hook::call('GoogleScholarPlugin::references', [&$outputReferences, $submission->getId()]);
 
-        if (!empty($outputReferences)) {
-            foreach ($outputReferences as $i => $outputReference) {
-                $templateMgr->addHeader('googleScholarReference' . $i++, '<meta name="citation_reference" content="' . htmlspecialchars($outputReference) . '"/>');
-            }
+        foreach ($outputReferences as $i => $outputReference) {
+            $templateMgr->addHeader('googleScholarReference' . $i++, '<meta name="citation_reference" content="' . htmlspecialchars($outputReference) . '"/>');
         }
 
         return false;
