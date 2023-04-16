@@ -1,17 +1,20 @@
 <?php
 
 /**
- * @file plugins/generic/googleScholar/GoogleScholarPlugin.inc.php
+ * @file plugins/generic/googleScholar/GoogleScholarPlugin.php
  *
  * Copyright (c) 2014-2020 Simon Fraser University
  * Copyright (c) 2003-2020 John Willinsky
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class GoogleScholarPlugin
+ *
  * @ingroup plugins_generic_googleScholar
  *
  * @brief Inject Google Scholar meta tags into submission views to facilitate indexing.
  */
+
+namespace APP\plugins\generic\googleScholar;
 
 use APP\core\Application;
 use APP\facades\Repo;
@@ -234,4 +237,8 @@ class GoogleScholarPlugin extends GenericPlugin
     {
         return __('plugins.generic.googleScholar.description');
     }
+}
+
+if (!PKP_STRICT_MODE) {
+    class_alias('\APP\plugins\generic\googleScholar\GoogleScholarPlugin', '\GoogleScholarPlugin');
 }
