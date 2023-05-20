@@ -17,8 +17,11 @@
 namespace APP\plugins\generic\googleScholar;
 
 use APP\core\Application;
+use APP\core\Request;
 use APP\facades\Repo;
+use APP\submission\Submission;
 use APP\template\TemplateManager;
+use PKP\citation\CitationDAO;
 use PKP\db\DAORegistry;
 use PKP\plugins\GenericPlugin;
 use PKP\plugins\Hook;
@@ -65,6 +68,7 @@ class GoogleScholarPlugin extends GenericPlugin
     {
         $application = Application::get();
         $applicationName = $application->getName();
+        /** @var Request */
         $request = $args[0];
         if ($applicationName == 'ojs2') {
             $issue = $args[1];
@@ -75,6 +79,7 @@ class GoogleScholarPlugin extends GenericPlugin
             $submission = $args[1];
             $submissionPath = 'preprint';
         }
+        /** @var Submission $submission */
         $requestArgs = $request->getRequestedArgs();
         $context = $request->getContext();
 
@@ -101,10 +106,9 @@ class GoogleScholarPlugin extends GenericPlugin
             $templateMgr->addHeader('googleScholarPublisher', '<meta name="citation_publisher" content="' . htmlspecialchars($context->getName($context->getPrimaryLocale())) . '"/>');
         }
 
-
         $publication = $submission->getCurrentPublication();
         $publicationLocale = $publication->getData('locale');
-        $submissionBestId = $publication->getData('urlPath') ?? $submission->getId();
+        $submissionBestId = $submission->getBestId();
 
         // Contributors
         $authors = $publication->getData('authors');
