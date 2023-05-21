@@ -86,7 +86,7 @@ class GoogleScholarPlugin extends GenericPlugin
         // Only add Google Scholar metadata tags to the canonical URL for the latest version
         // See discussion: https://github.com/pkp/pkp-lib/issues/4870
         if (count($requestArgs) > 1 && $requestArgs[1] === 'version') {
-            return;
+            return false;
         }
 
         $templateMgr = TemplateManager::getManager($request);
