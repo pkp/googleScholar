@@ -22,6 +22,7 @@ use APP\facades\Repo;
 use APP\submission\Submission;
 use APP\template\TemplateManager;
 use PKP\citation\CitationDAO;
+use PKP\core\PKPApplication;
 use PKP\db\DAORegistry;
 use PKP\plugins\GenericPlugin;
 use PKP\plugins\Hook;
@@ -114,7 +115,7 @@ class GoogleScholarPlugin extends GenericPlugin
         $authors = $publication->getData('authors');
         foreach ($authors as $i => $author) {
             $templateMgr->addHeader('googleScholarAuthor' . $i, '<meta name="citation_author" content="' . htmlspecialchars($author->getFullName(false, false, $publicationLocale)) . '"/>');
-            if ($affiliation = htmlspecialchars($author->getLocalizedData('affiliation', $publicationLocale))) {
+            if ($affiliation = htmlspecialchars($author->getLocalizedData('affiliation', $publicationLocale) ?? "")) {
                 $templateMgr->addHeader('googleScholarAuthor' . $i . 'Affiliation', '<meta name="citation_author_institution" content="' . $affiliation . '"/>');
             }
         }
@@ -168,7 +169,7 @@ class GoogleScholarPlugin extends GenericPlugin
         }
 
         // Abstract URL
-        $templateMgr->addHeader('googleScholarHtmlUrl', '<meta name="citation_abstract_html_url" content="' . $request->url(null, $submissionPath, 'view', [$submissionBestId]) . '"/>');
+        $templateMgr->addHeader('googleScholarHtmlUrl', '<meta name="citation_abstract_html_url" content="' . $request->getDispatcher()->url($request, PKPApplication::ROUTE_PAGE, null, $submissionPath, 'view', [$submissionBestId], urlLocaleForPage: '') . '"/>');
 
         // Abstract
         if ($abstract = $publication->getLocalizedData('abstract', $publicationLocale)) {
@@ -199,9 +200,9 @@ class GoogleScholarPlugin extends GenericPlugin
             $submissionFileId = $galley->getData('submissionFileId');
             if ($submissionFileId && $submissionFile = Repo::submissionFile()->get($submissionFileId)) {
                 if ($submissionFile->getData('mimetype') == 'application/pdf') {
-                    $templateMgr->addHeader('googleScholarPdfUrl' . $i++, '<meta name="citation_pdf_url" content="' . $request->url(null, $submissionPath, 'download', [$submissionBestId, $galley->getBestGalleyId()]) . '"/>');
+                    $templateMgr->addHeader('googleScholarPdfUrl' . $i++, '<meta name="citation_pdf_url" content="' . $request->getDispatcher()->url($request, PKPApplication::ROUTE_PAGE, null, $submissionPath, 'download', [$submissionBestId, $galley->getBestGalleyId()], urlLocaleForPage: '') . '"/>');
                 } elseif ($submissionFile->getData('mimetype') == 'text/html') {
-                    $templateMgr->addHeader('googleScholarHtmlUrl' . $i++, '<meta name="citation_fulltext_html_url" content="' . $request->url(null, $submissionPath, 'view', [$submissionBestId, $galley->getBestGalleyId()]) . '"/>');
+                    $templateMgr->addHeader('googleScholarHtmlUrl' . $i++, '<meta name="citation_fulltext_html_url" content="' . $request->getDispatcher()->url($request, PKPApplication::ROUTE_PAGE, null, $submissionPath, 'view', [$submissionBestId, $galley->getBestGalleyId()], urlLocaleForPage: '') . '"/>');
                 }
             }
         }
