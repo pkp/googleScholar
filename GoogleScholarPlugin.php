@@ -3,8 +3,8 @@
 /**
  * @file plugins/generic/googleScholar/GoogleScholarPlugin.php
  *
- * Copyright (c) 2014-2020 Simon Fraser University
- * Copyright (c) 2003-2020 John Willinsky
+ * Copyright (c) 2014-2024 Simon Fraser University
+ * Copyright (c) 2003-2024 John Willinsky
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class GoogleScholarPlugin
@@ -21,9 +21,7 @@ use APP\core\Request;
 use APP\facades\Repo;
 use APP\submission\Submission;
 use APP\template\TemplateManager;
-use PKP\citation\CitationDAO;
 use PKP\core\PKPApplication;
-use PKP\db\DAORegistry;
 use PKP\plugins\GenericPlugin;
 use PKP\plugins\Hook;
 
@@ -209,9 +207,7 @@ class GoogleScholarPlugin extends GenericPlugin
 
         // Citations
         $outputReferences = [];
-        $citationDao = DAORegistry::getDAO('CitationDAO'); /** @var CitationDAO $citationDao */
-        $parsedCitations = $citationDao->getByPublicationId($publication->getId());
-        while ($citation = $parsedCitations->next()) {
+        foreach (Repo::citation()->getByPublicationId($publication->getId()) as $i => $citation) {
             $outputReferences[] = $citation->getRawCitation();
         }
         Hook::call('GoogleScholarPlugin::references', [&$outputReferences, $submission->getId()]);
