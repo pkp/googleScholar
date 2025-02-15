@@ -26,6 +26,7 @@ use PKP\core\PKPApplication;
 use PKP\db\DAORegistry;
 use PKP\plugins\GenericPlugin;
 use PKP\plugins\Hook;
+use PKP\i18n\LocaleConversion;
 
 class GoogleScholarPlugin extends GenericPlugin
 {
