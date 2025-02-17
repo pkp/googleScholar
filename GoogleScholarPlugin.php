@@ -21,7 +21,6 @@ use APP\core\Request;
 use APP\facades\Repo;
 use APP\submission\Submission;
 use APP\template\TemplateManager;
-use PKP\citation\CitationDAO;
 use PKP\core\PKPApplication;
 use PKP\db\DAORegistry;
 use PKP\plugins\GenericPlugin;
@@ -213,9 +212,7 @@ class GoogleScholarPlugin extends GenericPlugin
 
         // Citations
         $outputReferences = [];
-        $citationDao = DAORegistry::getDAO('CitationDAO'); /** @var CitationDAO $citationDao */
-        $parsedCitations = $citationDao->getByPublicationId($publication->getId());
-        while ($citation = $parsedCitations->next()) {
+        foreach (Repo::citation()->getByPublicationId($publication->getId()) as $i => $citation) {
             $outputReferences[] = $citation->getRawCitation();
         }
         Hook::call('GoogleScholarPlugin::references', [&$outputReferences, $submission->getId()]);
