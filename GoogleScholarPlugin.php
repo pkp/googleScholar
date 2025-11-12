@@ -239,7 +239,3 @@ class GoogleScholarPlugin extends GenericPlugin
         return __('plugins.generic.googleScholar.description');
     }
 }
-
-if (!PKP_STRICT_MODE) {
-    class_alias('\APP\plugins\generic\googleScholar\GoogleScholarPlugin', '\GoogleScholarPlugin');
-}
