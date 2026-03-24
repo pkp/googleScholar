@@ -88,20 +88,20 @@ class GoogleScholarPlugin extends GenericPlugin
         $templateMgr->addHeader('googleScholarRevision', '<meta name="gs_meta_revision" content="1.1"/>');
 
         // Context identification
+        $publication = $submission->getCurrentPublication();
         if ($applicationName == 'ojs2') {
-            $templateMgr->addHeader('googleScholarJournalTitle', '<meta name="citation_journal_title" content="' . htmlspecialchars($context->getName($context->getPrimaryLocale())) . '"/>');
+            $templateMgr->addHeader('googleScholarJournalTitle', '<meta name="citation_journal_title" content="' . htmlspecialchars($publication->getData('contextName', $context->getPrimaryLocale())) . '"/>');
             if (($abbreviation = $context->getData('abbreviation', $context->getPrimaryLocale())) || ($abbreviation = $context->getData('acronym', $context->getPrimaryLocale()))) {
                 $templateMgr->addHeader('googleScholarJournalAbbrev', '<meta name="citation_journal_abbrev" content="' . htmlspecialchars($abbreviation) . '"/>');
             }
-            if (($issn = $context->getData('onlineIssn')) || ($issn = $context->getData('printIssn')) || ($issn = $context->getData('issn'))) {
+            if (($issn = $publication->getData('onlineIssn')) || ($issn = $publication->getData('printIssn')) || ($issn = $context->getData('issn'))) {
                 $templateMgr->addHeader('googleScholarIssn', '<meta name="citation_issn" content="' . htmlspecialchars($issn) . '"/> ');
             }
         }
         if ($applicationName == 'ops') {
-            $templateMgr->addHeader('googleScholarPublisher', '<meta name="citation_publisher" content="' . htmlspecialchars($context->getName($context->getPrimaryLocale())) . '"/>');
+            $templateMgr->addHeader('googleScholarPublisher', '<meta name="citation_publisher" content="' . htmlspecialchars($publication->getData('contextName', $context->getPrimaryLocale())) . '"/>');
         }
 
-        $publication = $submission->getCurrentPublication();
         $publicationLocale = $publication->getData('locale');
         $submissionBestId = $publication->getData('urlPath') ?? $submission->getId();
 
