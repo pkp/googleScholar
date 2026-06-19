@@ -22,9 +22,9 @@ use APP\facades\Repo;
 use APP\submission\Submission;
 use APP\template\TemplateManager;
 use PKP\core\PKPApplication;
+use PKP\i18n\LocaleConversion;
 use PKP\plugins\GenericPlugin;
 use PKP\plugins\Hook;
-use PKP\i18n\LocaleConversion;
 
 class GoogleScholarPlugin extends GenericPlugin
 {
@@ -46,29 +46,24 @@ class GoogleScholarPlugin extends GenericPlugin
     }
 
     /**
-     * Get the name of the settings file to be installed on new context
-     * creation.
-     *
-     * @return string
+     * Get the name of the settings file to be installed on new context creation.
      */
-    public function getContextSpecificPluginSettingsFile()
+    public function getContextSpecificPluginSettingsFile(): string
     {
         return $this->getPluginPath() . '/settings.xml';
     }
 
     /**
-     * Inject Google Scholar metadata into submission landing page view
+     * Inject Google Scholar metadata into the submission landing page view.
      *
      * @param string $hookName
      * @param array $args
-     *
-     * @return boolean
      */
-    public function submissionView($hookName, $args)
+    public function submissionView($hookName, $args): bool
     {
         $application = Application::get();
         $applicationName = $application->getName();
-        /** @var Request */
+        /** @var Request $request */
         $request = $args[0];
         if ($applicationName == 'ojs2') {
             $issue = $args[1];
@@ -114,10 +109,14 @@ class GoogleScholarPlugin extends GenericPlugin
         $authors = $publication->getData('authors');
         foreach ($authors as $i => $author) {
             $templateMgr->addHeader('googleScholarAuthor' . $i, '<meta name="citation_author" content="' . htmlspecialchars($author->getFullName(false, false, $publicationLocale)) . '"/>');
-            foreach($author->getAffiliations() as $affiliation) {
+            foreach ($author->getAffiliations() as $affiliation) {
+                $institutionName = $affiliation->getLocalizedName($publicationLocale);
+                if (trim($institutionName ?? '') === '') {
+                    continue;
+                }
                 $templateMgr->addHeader(
                     'googleScholarAuthor' . $i . 'Affiliation' . $affiliation->getId(),
-                    '<meta name="citation_author_institution" content="' . htmlspecialchars($affiliation->getLocalizedName($publicationLocale)) . '"/>'
+                    '<meta name="citation_author_institution" content="' . htmlspecialchars($institutionName) . '"/>'
                 );
             }
         }
@@ -222,21 +221,17 @@ class GoogleScholarPlugin extends GenericPlugin
     }
 
     /**
-     * Get the display name of this plugin
-     *
-     * @return string
+     * Get the display name of this plugin.
      */
-    public function getDisplayName()
+    public function getDisplayName(): string
     {
         return __('plugins.generic.googleScholar.name');
     }
 
     /**
-     * Get the description of this plugin
-     *
-     * @return string
+     * Get the description of this plugin.
      */
-    public function getDescription()
+    public function getDescription(): string
     {
         return __('plugins.generic.googleScholar.description');
     }
