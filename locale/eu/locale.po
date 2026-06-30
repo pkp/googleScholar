@@ -1,0 +1,21 @@
+# Informatikaria <informatikaria@ueu.eus>, 2026.
+msgid ""
+msgstr ""
+"PO-Revision-Date: 2026-05-26 11:05+0000\n"
+"Last-Translator: Informatikaria <informatikaria@ueu.eus>\n"
+"Language-Team: Basque <http://translate.pkp.sfu.ca/projects/plugins/"
+"google-scholar-plugin/eu/>\n"
+"Language: eu\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=n != 1;\n"
+"X-Generator: Weblate 4.18.2\n"
+
+msgid "plugins.generic.googleScholar.name"
+msgstr "Google Scholar indexazio plugina"
+
+msgid "plugins.generic.googleScholar.description"
+msgstr ""
+"Plugin honek argitaratutako edukia Google Scholar-en indexatzea ahalbidetzen "
+"du."
