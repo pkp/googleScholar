@@ -3,8 +3,8 @@
 /**
  * @file plugins/generic/googleScholar/GoogleScholarPlugin.php
  *
- * Copyright (c) 2014-2025 Simon Fraser University
- * Copyright (c) 2003-2025 John Willinsky
+ * Copyright (c) 2014-2026 Simon Fraser University
+ * Copyright (c) 2003-2026 John Willinsky
  * Distributed under the GNU GPL v3. For full terms see the file docs/COPYING.
  *
  * @class GoogleScholarPlugin
@@ -150,6 +150,9 @@ class GoogleScholarPlugin extends GenericPlugin
                 if ($endPage = $publication->getEndingPage()) {
                     $templateMgr->addHeader('googleScholarEndPage', '<meta name="citation_lastpage" content="' . htmlspecialchars($endPage) . '"/>');
                 }
+            } elseif ($articleNumber = $publication->getData('articleNumber')) {
+                // No dedicated tag exists; publishers of article-number journals use citation_firstpage.
+                $templateMgr->addHeader('googleScholarStartPage', '<meta name="citation_firstpage" content="' . htmlspecialchars($articleNumber) . '"/>');
             }
         }
         if ($applicationName == 'ops') {
