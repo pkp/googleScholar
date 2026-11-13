@@ -103,7 +103,7 @@ class GoogleScholarPlugin extends GenericPlugin
 
         $publication = $submission->getCurrentPublication();
         $publicationLocale = $publication->getData('locale');
-        $submissionBestId = $publication->getData('urlPath') ?? $submission->getId();
+        $submissionBestId = $submission->getBestId();
 
         // Contributors
         $authors = $publication->getData('authors');
